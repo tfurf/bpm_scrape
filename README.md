@@ -83,6 +83,28 @@ npm run server
 
 4. Grant camera permissions when prompted
 
+## Deployment
+
+### Docker & Kubernetes (k3s)
+
+For production deployment on Kubernetes/k3s, see **[DEPLOYMENT.md](DEPLOYMENT.md)** for detailed instructions including:
+- Building Docker images
+- Deploying to k3s clusters
+- Configuring ingress and TLS
+- Storage management
+- Backup and restore procedures
+
+Quick start for k3s:
+
+```bash
+# Build and import image
+docker build -t bpm-scrape:latest .
+docker save bpm-scrape:latest | sudo k3s ctr images import -
+
+# Deploy to cluster
+kubectl apply -f k8s/
+```
+
 ## Usage
 
 ### Taking a Reading with OCR

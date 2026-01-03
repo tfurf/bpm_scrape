@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bpm-scrape-ingress
+  namespace: bpm-scrape
+  annotations:
+    # Traefik ingress annotations (k3s default)
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    # For cert-manager (optional - uncomment if using HTTPS)
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  rules:
+  - host: bpm.example.com  # Change to your domain
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: bpm-scrape-service
+            port:
+              number: 5000
+  # Uncomment for HTTPS with cert-manager
+  # tls:
+  # - hosts:
+  #   - bpm.example.com
+  #   secretName: bpm-scrape-tls

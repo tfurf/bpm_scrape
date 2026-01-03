@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bpm-scrape
+  namespace: bpm-scrape
+  labels:
+    app: bpm-scrape
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bpm-scrape
+  template:
+    metadata:
+      labels:
+        app: bpm-scrape
+    spec:
+      containers:
+      - name: bpm-scrape
+        image: bpm-scrape:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5000
+          name: http
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "5000"
+        volumeMounts:
+        - name: logs-volume
+          mountPath: /app/logs
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 5000
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 3
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+      volumes:
+      - name: logs-volume
+        persistentVolumeClaim:
+          claimName: bpm-logs-pvc
