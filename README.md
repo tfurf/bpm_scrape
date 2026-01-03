@@ -87,21 +87,32 @@ npm run server
 
 ### Docker & Kubernetes (k3s)
 
-For production deployment on Kubernetes/k3s, see **[DEPLOYMENT.md](DEPLOYMENT.md)** for detailed instructions including:
-- Building Docker images
-- Deploying to k3s clusters
-- Configuring ingress and TLS
-- Storage management
-- Backup and restore procedures
+For production deployment on Kubernetes/k3s, see **[DEPLOYMENT.md](DEPLOYMENT.md)** for detailed instructions.
 
-Quick start for k3s:
+#### Option 1: Helm Chart (Recommended)
 
 ```bash
 # Build and import image
 docker build -t bpm-scrape:latest .
 docker save bpm-scrape:latest | sudo k3s ctr images import -
 
-# Deploy to cluster
+# Install with Helm
+helm install bpm-scrape ./helm/bpm-scrape --namespace bpm-scrape --create-namespace
+
+# Or with custom values
+helm install bpm-scrape ./helm/bpm-scrape -f ./helm/bpm-scrape/values-home.yaml
+```
+
+See **[helm/bpm-scrape/README.md](helm/bpm-scrape/README.md)** for complete Helm documentation.
+
+#### Option 2: Direct kubectl
+
+```bash
+# Build and import image
+docker build -t bpm-scrape:latest .
+docker save bpm-scrape:latest | sudo k3s ctr images import -
+
+# Deploy with kubectl
 kubectl apply -f k8s/
 ```
 

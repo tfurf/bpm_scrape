@@ -1,0 +1,68 @@
+# Example values for production deployment with ingress and TLS
+replicaCount: 2
+
+image:
+  repository: bpm-scrape
+  pullPolicy: Always
+  tag: "1.0.0"
+
+service:
+  type: ClusterIP
+  port: 5000
+
+ingress:
+  enabled: true
+  className: ""
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: bpm.yourdomain.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: bpm-scrape-tls
+      hosts:
+        - bpm.yourdomain.com
+
+persistence:
+  enabled: true
+  storageClass: "fast-ssd"
+  accessMode: ReadWriteOnce
+  size: 5Gi
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+
+autoscaling:
+  enabled: false
+  # Enable if you want autoscaling (requires metrics-server)
+  # minReplicas: 2
+  # maxReplicas: 5
+  # targetCPUUtilizationPercentage: 80
+
+env:
+  NODE_ENV: "production"
+  PORT: "5000"
+
+livenessProbe:
+  httpGet:
+    path: /api/health
+    port: http
+  initialDelaySeconds: 15
+  periodSeconds: 30
+  timeoutSeconds: 5
+
+readinessProbe:
+  httpGet:
+    path: /api/health
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 3

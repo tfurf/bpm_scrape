@@ -1,0 +1,16 @@
+apiVersion: v2
+name: bpm-scrape
+description: Blood Pressure Monitor - Mobile-first web app with OCR for logging BP readings
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - health
+  - blood-pressure
+  - monitoring
+  - ocr
+home: https://github.com/tfurf/bpm_scrape
+sources:
+  - https://github.com/tfurf/bpm_scrape
+maintainers:
+  - name: tfurf

@@ -1,0 +1,111 @@
+# Default values for bpm-scrape.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: bpm-scrape
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 5000
+  targetPort: 5000
+  # For home network deployment without ingress, use NodePort
+  # type: NodePort
+  # nodePort: 30500
+
+ingress:
+  enabled: true
+  className: ""
+  annotations:
+    # For k3s Traefik ingress
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    # For cert-manager HTTPS (uncomment and configure)
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: bpm.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  # - secretName: bpm-scrape-tls
+  #   hosts:
+  #     - bpm.example.com
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+persistence:
+  enabled: true
+  storageClass: "local-path"  # k3s default
+  accessMode: ReadWriteOnce
+  size: 1Gi
+  # existingClaim: ""
+
+env:
+  NODE_ENV: "production"
+  PORT: "5000"
+
+livenessProbe:
+  httpGet:
+    path: /api/health
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 30
+  timeoutSeconds: 3
+
+readinessProbe:
+  httpGet:
+    path: /api/health
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 3
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
