@@ -145,10 +145,16 @@ bpm_scrape/
 
 ## Security Notes
 
-- This app is designed for home network use
+- This app is designed for home network use only
 - No authentication is implemented by default
-- For production use on public networks, add authentication
+- No rate limiting is implemented (suitable for single-user home network use)
+- For production use on public networks, consider adding:
+  - User authentication and authorization
+  - Rate limiting on API endpoints
+  - HTTPS/TLS encryption
+  - Input validation and sanitization
 - Camera access requires HTTPS on most browsers (except localhost)
+- Data is stored locally in plain text JSON format
 
 ## Future Enhancements
 
