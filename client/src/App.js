@@ -183,15 +183,15 @@ function App() {
     
     // Validate ranges
     if (readings.systolic) {
-      const sys = parseInt(readings.systolic);
+      const sys = parseInt(readings.systolic, 10);
       if (sys < 60 || sys > 250) readings.systolic = '';
     }
     if (readings.diastolic) {
-      const dia = parseInt(readings.diastolic);
+      const dia = parseInt(readings.diastolic, 10);
       if (dia < 40 || dia > 150) readings.diastolic = '';
     }
     if (readings.pulse) {
-      const pul = parseInt(readings.pulse);
+      const pul = parseInt(readings.pulse, 10);
       if (pul < 30 || pul > 220) readings.pulse = '';
     }
     
