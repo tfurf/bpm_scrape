@@ -130,71 +130,104 @@ function App() {
     // Remove extra whitespace and normalize
     const normalizedText = text.replace(/\s+/g, ' ').toUpperCase();
     
+    console.log('OCR Text:', normalizedText); // Debug logging
+    
     // Pattern 1: Standard BP format like "120/80"
     const bpPattern = /(\d{2,3})\s*\/\s*(\d{2,3})/;
     const bpMatch = normalizedText.match(bpPattern);
     if (bpMatch) {
       readings.systolic = bpMatch[1];
       readings.diastolic = bpMatch[2];
+      console.log('Found BP pattern:', bpMatch[0]);
     }
     
-    // Pattern 2: Look for SYS/SYSTOLIC
+    // Pattern 2: Look for SYS/SYSTOLIC (label followed by number)
     if (!readings.systolic) {
       const sysPatterns = [
-        /(?:SYS|SYSTOLIC)[:\s]*(\d{2,3})/,
-        /(\d{2,3})\s*(?:SYS|SYSTOLIC)/
+        /(?:SYS|SYSTOLIC)[:\s]+(\d{2,3})/,
+        /(?:SYS|SYSTOLIC)[:\s]*(\d{2,3})/
       ];
       for (const pattern of sysPatterns) {
         const match = normalizedText.match(pattern);
         if (match) {
           readings.systolic = match[1];
+          console.log('Found SYS pattern:', match[0]);
           break;
         }
       }
     }
     
-    // Pattern 3: Look for DIA/DIASTOLIC
+    // Pattern 3: Look for DIA/DIASTOLIC (label followed by number)
     if (!readings.diastolic) {
       const diaPatterns = [
-        /(?:DIA|DIASTOLIC)[:\s]*(\d{2,3})/,
-        /(\d{2,3})\s*(?:DIA|DIASTOLIC)/
+        /(?:DIA|DIASTOLIC)[:\s]+(\d{2,3})/,
+        /(?:DIA|DIASTOLIC)[:\s]*(\d{2,3})/
       ];
       for (const pattern of diaPatterns) {
         const match = normalizedText.match(pattern);
         if (match) {
           readings.diastolic = match[1];
+          console.log('Found DIA pattern:', match[0]);
           break;
         }
       }
     }
     
-    // Pattern 4: Look for pulse/heart rate
+    // Pattern 4: Look for pulse/heart rate (more specific patterns first)
     const pulsePatterns = [
-      /(?:PULSE|HR|HEART RATE|BPM)[:\s]*(\d{2,3})/,
-      /(\d{2,3})\s*(?:PULSE|HR|BPM)/
+      /(?:PULSE|HEART[\s-]?RATE)[:\s]+(\d{2,3})/,
+      /(?:HR|BPM)[:\s]+(\d{2,3})/,
+      /(\d{2,3})\s*(?:\/MIN|BPM)/,
+      /(?:PULSE|HR)[:\s]*(\d{2,3})/
     ];
     for (const pattern of pulsePatterns) {
       const match = normalizedText.match(pattern);
       if (match) {
         readings.pulse = match[1];
+        console.log('Found PULSE pattern:', match[0]);
         break;
+      }
+    }
+    
+    // Fallback: If we have SYS and DIA labels but no pulse, look for a third standalone number
+    if (readings.systolic && readings.diastolic && !readings.pulse) {
+      // Find all 2-3 digit numbers
+      const allNumbers = normalizedText.match(/\d{2,3}/g);
+      if (allNumbers && allNumbers.length >= 3) {
+        // Get the third number (likely the pulse)
+        const thirdNumber = allNumbers[2];
+        const num = parseInt(thirdNumber, 10);
+        if (num >= 30 && num <= 220) {
+          readings.pulse = thirdNumber;
+          console.log('Found pulse as third number:', thirdNumber);
+        }
       }
     }
     
     // Validate ranges
     if (readings.systolic) {
       const sys = parseInt(readings.systolic, 10);
-      if (sys < 60 || sys > 250) readings.systolic = '';
+      if (sys < 60 || sys > 250) {
+        console.log('Systolic out of range:', sys);
+        readings.systolic = '';
+      }
     }
     if (readings.diastolic) {
       const dia = parseInt(readings.diastolic, 10);
-      if (dia < 40 || dia > 150) readings.diastolic = '';
+      if (dia < 40 || dia > 150) {
+        console.log('Diastolic out of range:', dia);
+        readings.diastolic = '';
+      }
     }
     if (readings.pulse) {
       const pul = parseInt(readings.pulse, 10);
-      if (pul < 30 || pul > 220) readings.pulse = '';
+      if (pul < 30 || pul > 220) {
+        console.log('Pulse out of range:', pul);
+        readings.pulse = '';
+      }
     }
     
+    console.log('Parsed readings:', readings); // Debug logging
     return readings;
   };
 
