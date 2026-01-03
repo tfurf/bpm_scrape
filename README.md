@@ -5,11 +5,13 @@ Blood pressure monitor logger web app - a mobile-friendly web application for ca
 ## Features
 
 - 📷 **Camera Integration**: Take photos of your blood pressure monitor directly from your phone
+- 🔍 **Automatic OCR**: Automatically extract readings from photos using Tesseract.js OCR
 - 📊 **Data Logging**: Record systolic, diastolic, pulse, and notes with timestamps
 - 📱 **Mobile-Friendly**: Optimized UI for smartphone usage
 - 💾 **Local Storage**: All data saved locally in JSON format
 - 📈 **Export to Google Sheets**: Prepare data for easy export to Google Sheets
 - 🗑️ **Manage Entries**: View and delete historical readings
+- ✏️ **Manual Override**: Edit OCR results before saving
 
 ## Prerequisites
 
@@ -83,16 +85,29 @@ npm run server
 
 ## Usage
 
-### Taking a Reading
+### Taking a Reading with OCR
 
 1. Click "New Reading" tab
-2. Tap "📷 Take Photo of Monitor" to capture an image (optional)
-3. Enter your blood pressure values:
-   - Systolic (top number)
-   - Diastolic (bottom number)
-   - Pulse rate
-4. Add any notes (optional)
-5. Tap "💾 Save Reading"
+2. Tap "📷 Take Photo of Monitor" to capture an image
+3. **The app automatically processes the image with OCR** and extracts:
+   - Systolic pressure (top number)
+   - Diastolic pressure (bottom number)
+   - Pulse/heart rate
+4. **Verify the extracted values** - OCR may not be 100% accurate
+5. Edit any incorrect values manually
+6. Add any notes (optional)
+7. Tap "💾 Save Reading"
+
+**OCR Tips for Best Results:**
+- Ensure good lighting when taking the photo
+- Keep the camera steady and in focus
+- Position the monitor display clearly in frame
+- Avoid glare or reflections on the screen
+- If OCR fails, you can manually enter the values
+
+### Manual Entry (Without Photo)
+
+You can also skip the photo and enter values directly into the form fields.
 
 ### Viewing History
 
@@ -171,10 +186,32 @@ bpm_scrape/
 - Check browser camera permissions
 - Try using a different browser (Chrome/Safari recommended)
 
+**OCR not detecting values:**
+- Ensure good lighting and clear focus when taking photo
+- Avoid glare or shadows on the monitor screen
+- Take photo straight-on, not at an angle
+- Use the "Re-process Image" button to try OCR again
+- If OCR continues to fail, manually enter the values
+
 **Cannot connect from phone:**
 - Verify both devices are on the same network
 - Check firewall settings
 - Ensure the server is bound to 0.0.0.0 (not 127.0.0.1)
+
+## How OCR Works
+
+The app uses [Tesseract.js](https://tesseract.projectnaptha.com/), an open-source OCR engine, to extract text from blood pressure monitor photos. The system:
+
+1. Captures the image from your camera
+2. Processes it with Tesseract OCR engine
+3. Searches for common blood pressure patterns like:
+   - "120/80" format
+   - "SYS 120 DIA 80" labels
+   - "PULSE 72" or "HR 72" indicators
+4. Validates ranges (systolic: 60-250, diastolic: 40-150, pulse: 30-220)
+5. Auto-fills the form fields with detected values
+
+**Note:** OCR accuracy depends on image quality, monitor display clarity, and text format. Always verify extracted values before saving.
 
 ## License
 

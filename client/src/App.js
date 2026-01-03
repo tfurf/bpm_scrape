@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Tesseract from 'tesseract.js';
 import './App.css';
 
 function App() {
@@ -13,6 +14,8 @@ function App() {
   const [showCamera, setShowCamera] = useState(false);
   const [view, setView] = useState('form'); // 'form' or 'logs'
   const [exportData, setExportData] = useState(null);
+  const [ocrProcessing, setOcrProcessing] = useState(false);
+  const [ocrProgress, setOcrProgress] = useState(0);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
@@ -45,7 +48,7 @@ function App() {
     }
   };
 
-  const captureImage = () => {
+  const captureImage = async () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (video && canvas) {
@@ -56,7 +59,143 @@ function App() {
       const imageData = canvas.toDataURL('image/jpeg', 0.8);
       setCapturedImage(imageData);
       stopCamera();
+      
+      // Automatically run OCR on the captured image
+      await processImageWithOCR(imageData);
     }
+  };
+
+  const processImageWithOCR = async (imageData) => {
+    setOcrProcessing(true);
+    setOcrProgress(0);
+    
+    try {
+      const result = await Tesseract.recognize(
+        imageData,
+        'eng',
+        {
+          logger: (m) => {
+            if (m.status === 'recognizing text') {
+              setOcrProgress(Math.round(m.progress * 100));
+            }
+          }
+        }
+      );
+
+      const text = result.data.text;
+      console.log('OCR Result:', text);
+      
+      // Parse the text to extract blood pressure readings
+      const readings = parseBloodPressureReadings(text);
+      
+      if (readings.systolic || readings.diastolic || readings.pulse) {
+        setFormData(prev => ({
+          ...prev,
+          systolic: readings.systolic || prev.systolic,
+          diastolic: readings.diastolic || prev.diastolic,
+          pulse: readings.pulse || prev.pulse
+        }));
+        
+        const foundValues = [];
+        if (readings.systolic) foundValues.push(`Systolic: ${readings.systolic}`);
+        if (readings.diastolic) foundValues.push(`Diastolic: ${readings.diastolic}`);
+        if (readings.pulse) foundValues.push(`Pulse: ${readings.pulse}`);
+        
+        alert(`Found readings:\n${foundValues.join('\n')}\n\nPlease verify the values before saving.`);
+      } else {
+        alert('Could not automatically detect readings. Please enter values manually.');
+      }
+    } catch (error) {
+      console.error('OCR Error:', error);
+      alert('Error processing image. Please enter values manually.');
+    } finally {
+      setOcrProcessing(false);
+      setOcrProgress(0);
+    }
+  };
+
+  const parseBloodPressureReadings = (text) => {
+    // Common patterns for blood pressure readings:
+    // - "120/80" or "120 / 80"
+    // - "SYS 120" and "DIA 80"
+    // - "Systolic: 120" and "Diastolic: 80"
+    // - Pulse/Heart Rate: "72 bpm" or "HR: 72" or "PULSE 72"
+    
+    const readings = {
+      systolic: '',
+      diastolic: '',
+      pulse: ''
+    };
+    
+    // Remove extra whitespace and normalize
+    const normalizedText = text.replace(/\s+/g, ' ').toUpperCase();
+    
+    // Pattern 1: Standard BP format like "120/80"
+    const bpPattern = /(\d{2,3})\s*\/\s*(\d{2,3})/;
+    const bpMatch = normalizedText.match(bpPattern);
+    if (bpMatch) {
+      readings.systolic = bpMatch[1];
+      readings.diastolic = bpMatch[2];
+    }
+    
+    // Pattern 2: Look for SYS/SYSTOLIC
+    if (!readings.systolic) {
+      const sysPatterns = [
+        /(?:SYS|SYSTOLIC)[:\s]*(\d{2,3})/,
+        /(\d{2,3})\s*(?:SYS|SYSTOLIC)/
+      ];
+      for (const pattern of sysPatterns) {
+        const match = normalizedText.match(pattern);
+        if (match) {
+          readings.systolic = match[1];
+          break;
+        }
+      }
+    }
+    
+    // Pattern 3: Look for DIA/DIASTOLIC
+    if (!readings.diastolic) {
+      const diaPatterns = [
+        /(?:DIA|DIASTOLIC)[:\s]*(\d{2,3})/,
+        /(\d{2,3})\s*(?:DIA|DIASTOLIC)/
+      ];
+      for (const pattern of diaPatterns) {
+        const match = normalizedText.match(pattern);
+        if (match) {
+          readings.diastolic = match[1];
+          break;
+        }
+      }
+    }
+    
+    // Pattern 4: Look for pulse/heart rate
+    const pulsePatterns = [
+      /(?:PULSE|HR|HEART RATE|BPM)[:\s]*(\d{2,3})/,
+      /(\d{2,3})\s*(?:PULSE|HR|BPM)/
+    ];
+    for (const pattern of pulsePatterns) {
+      const match = normalizedText.match(pattern);
+      if (match) {
+        readings.pulse = match[1];
+        break;
+      }
+    }
+    
+    // Validate ranges
+    if (readings.systolic) {
+      const sys = parseInt(readings.systolic);
+      if (sys < 60 || sys > 250) readings.systolic = '';
+    }
+    if (readings.diastolic) {
+      const dia = parseInt(readings.diastolic);
+      if (dia < 40 || dia > 150) readings.diastolic = '';
+    }
+    if (readings.pulse) {
+      const pul = parseInt(readings.pulse);
+      if (pul < 30 || pul > 220) readings.pulse = '';
+    }
+    
+    return readings;
   };
 
   const stopCamera = () => {
@@ -211,14 +350,37 @@ function App() {
             {capturedImage && (
               <div className="captured-image">
                 <img src={capturedImage} alt="Captured monitor" />
-                <button onClick={() => setCapturedImage(null)}>🔄 Retake</button>
+                {ocrProcessing ? (
+                  <div className="ocr-processing">
+                    <div className="ocr-spinner"></div>
+                    <p>Processing image with OCR... {ocrProgress}%</p>
+                  </div>
+                ) : (
+                  <button onClick={() => {
+                    setCapturedImage(null);
+                    setFormData({ systolic: '', diastolic: '', pulse: '', notes: '' });
+                  }}>🔄 Retake</button>
+                )}
               </div>
             )}
             <canvas ref={canvasRef} style={{ display: 'none' }} />
           </div>
 
           <form onSubmit={handleSubmit} className="bp-form">
-            <h2>Enter Blood Pressure Reading</h2>
+            <h2>Blood Pressure Reading</h2>
+            {capturedImage && !ocrProcessing && (
+              <div className="ocr-info">
+                <p>✓ Image processed with OCR</p>
+                <button 
+                  type="button" 
+                  className="reprocess-btn"
+                  onClick={() => processImageWithOCR(capturedImage)}
+                >
+                  🔄 Re-process Image
+                </button>
+              </div>
+            )}
+            <p className="form-hint">Verify and edit the values below:</p>
             
             <div className="form-group">
               <label htmlFor="systolic">Systolic (mmHg)</label>

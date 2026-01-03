@@ -158,6 +158,35 @@ body {
   box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
+.ocr-processing {
+  text-align: center;
+  padding: 15px;
+  background-color: #e7f3ff;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+.ocr-processing p {
+  margin: 10px 0 0 0;
+  color: #0056b3;
+  font-weight: 500;
+}
+
+.ocr-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 .bp-form {
   background-color: #f8f9fa;
   padding: 25px;
@@ -169,6 +198,49 @@ body {
   margin-bottom: 20px;
   color: #333;
   font-size: 20px;
+}
+
+.ocr-info {
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.ocr-info p {
+  margin: 0;
+  color: #155724;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.reprocess-btn {
+  background-color: #667eea;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.reprocess-btn:hover {
+  background-color: #5568d3;
+  transform: translateY(-1px);
+}
+
+.form-hint {
+  color: #6c757d;
+  font-size: 14px;
+  margin-bottom: 15px;
+  font-style: italic;
 }
 
 .form-group {
