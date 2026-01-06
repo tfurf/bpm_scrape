@@ -1,0 +1,63 @@
+name: Release Helm Chart
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'helm/bpm-scrape/**'
+      - '.github/workflows/helm-release.yaml'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  CHART_NAME: bpm-scrape
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.13.0
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Package Helm Chart
+        run: |
+          helm package helm/${{ env.CHART_NAME }} --destination .deploy
+
+      - name: Push Helm Chart to GHCR
+        run: |
+          CHART_VERSION=$(helm show chart helm/${{ env.CHART_NAME }} | grep '^version:' | awk '{print $2}')
+          echo "Chart version: ${CHART_VERSION}"
+          
+          # Push to GHCR OCI registry
+          helm push .deploy/${{ env.CHART_NAME }}-${CHART_VERSION}.tgz oci://${{ env.REGISTRY }}/${{ github.repository_owner }}
+
+      - name: Upload Chart as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: helm-chart
+          path: .deploy/*.tgz
+          retention-days: 30

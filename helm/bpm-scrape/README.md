@@ -10,7 +10,35 @@ A Helm chart for deploying the Blood Pressure Monitor web application on Kuberne
 
 ## Installing the Chart
 
-### Build the Docker Image First
+### From GitHub Container Registry (GHCR)
+
+The chart is automatically published to GHCR via GitHub Actions.
+
+```bash
+# Install from GHCR
+helm install bpm-scrape oci://ghcr.io/furfmon/bpm-scrape --version 1.0.0
+
+# Or install latest version
+helm install bpm-scrape oci://ghcr.io/furfmon/bpm-scrape
+
+# With custom namespace
+helm install bpm-scrape oci://ghcr.io/furfmon/bpm-scrape \
+  --namespace bpm-scrape --create-namespace
+
+# With custom values
+helm install bpm-scrape oci://ghcr.io/furfmon/bpm-scrape \
+  -f my-values.yaml
+```
+
+**For private charts**, login first:
+
+```bash
+echo $GITHUB_TOKEN | helm registry login ghcr.io -u USERNAME --password-stdin
+```
+
+### From Local Source
+
+If building from source or for development:
 
 ```bash
 # Build the Docker image
@@ -18,12 +46,8 @@ docker build -t bpm-scrape:latest .
 
 # For k3s, import the image
 docker save bpm-scrape:latest | sudo k3s ctr images import -
-```
 
-### Install the Helm Chart
-
-```bash
-# Install with default values
+# Install local chart
 helm install bpm-scrape ./helm/bpm-scrape
 
 # Install in a specific namespace
@@ -99,6 +123,34 @@ The following table lists the configurable parameters and their default values.
 | `env.PORT` | Application port | `5000` |
 
 ## Example Configurations
+
+### Using Published Docker Image from GHCR
+
+```yaml
+# values-ghcr.yaml
+image:
+  repository: ghcr.io/furfmon/bpm-scrape
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+# For private images
+imagePullSecrets:
+  - name: ghcr-secret
+```
+
+Create secret for private images:
+```bash
+kubectl create secret docker-registry ghcr-secret \
+  --docker-server=ghcr.io \
+  --docker-username=USERNAME \
+  --docker-password=$GITHUB_TOKEN \
+  --namespace=bpm-scrape
+```
+
+Deploy:
+```bash
+helm install bpm-scrape oci://ghcr.io/furfmon/bpm-scrape -f values-ghcr.yaml
+```
 
 ### Home Network Deployment (NodePort)
 
