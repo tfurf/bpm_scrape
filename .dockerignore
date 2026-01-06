@@ -1,0 +1,20 @@
+# Dockerignore file
+node_modules
+npm-debug.log
+.git
+.gitignore
+README.md
+.env
+.env.local
+.DS_Store
+logs/*.json
+dist
+build
+.vscode
+.idea
+*.swp
+*.swo
+*~
+client/node_modules
+client/build/static/**/*.map
+OCR_TESTING.md
